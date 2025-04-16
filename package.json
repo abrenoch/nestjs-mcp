@@ -1,10 +1,22 @@
 {
-  "name": "nest-mcp",
+  "name": "nestjs-mcp",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "description": "A NestJS-based implementation of the Model Context Protocol (MCP).",
+  "author": "abrenoch",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abrenoch/nestjs-mcp.git"
+  },
+  "license": "MIT",
+  "private": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "dist/main.js",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
