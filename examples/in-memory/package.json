@@ -20,7 +20,10 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "workspaces": {
-    "nohoist": ["@nestjs", "@nestjs/**"]
+    "nohoist": [
+      "@nestjs",
+      "@nestjs/**"
+    ]
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
