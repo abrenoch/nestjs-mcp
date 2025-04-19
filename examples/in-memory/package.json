@@ -22,7 +22,9 @@
   "workspaces": {
     "nohoist": [
       "@nestjs",
-      "@nestjs/**"
+      "@nestjs/**",
+      "zod",
+      "zod/**"
     ]
   },
   "dependencies": {
