@@ -1,14 +1,24 @@
 import { io, Socket } from 'socket.io-client';
 import { ref } from 'vue';
 
+interface ToolCall {
+  id: string;
+  function: {
+    name: string;
+    arguments: string;
+  };
+  result?: any;
+}
+
 class SocketService {
   private socket: Socket | null = null;
   public isConnected = ref(false);
-  public messages = ref<{ role: string; content: string }[]>([]);
+  public messages = ref<{ role: string; content: string; toolCalls?: ToolCall[] }[]>([]);
   public isStreaming = ref(false);
   public currentStreamedMessage = ref('');
   public toolCallInProgress = ref(false);
-  public currentToolCall = ref<any>(null);
+  public currentToolCall = ref<ToolCall | null>(null);
+  public completedToolCalls = ref<ToolCall[]>([]);
 
   connect() {
     if (this.socket) return;
@@ -37,41 +47,50 @@ class SocketService {
       console.log('Stream started');
       this.isStreaming.value = true;
       this.currentStreamedMessage.value = '';
+      // Clear completed tool calls for the new stream
+      this.completedToolCalls.value = [];
     });
 
     this.socket.on('streamChunk', ({ chunk }) => {
       console.log('Received chunk:', chunk);
       this.currentStreamedMessage.value += chunk;
-    });
-
-    this.socket.on('toolCallStart', ({ toolCall }) => {
+    });    this.socket.on('toolCallStart', ({ toolCall }) => {
       console.log('Tool call started:', toolCall);
       this.toolCallInProgress.value = true;
       this.currentToolCall.value = toolCall;
     });
 
-    this.socket.on('toolCallComplete', ({ result }) => {
-      console.log('Tool call completed:', result);
+    this.socket.on('toolCallComplete', (data) => {
+      console.log('Tool call completed:', data);
       this.toolCallInProgress.value = false;
-    });
-
-    this.socket.on('streamComplete', ({ messages }) => {
-      console.log('Stream completed with messages:', messages);
+      
+      // Store the completed tool call with its result
+      if (this.currentToolCall.value) {
+        const completedTool = {
+          ...this.currentToolCall.value,
+          result: data.result
+        };
+        this.completedToolCalls.value.push(completedTool);
+        this.currentToolCall.value = null;
+      }
+    });    this.socket.on('streamComplete', (data) => {
+      console.log('Stream completed with messages:', data.messages);
       this.isStreaming.value = false;
       
-      // Add the completed streamed message to our messages list
+      // Add the completed streamed message to our messages list with any tool calls
       if (this.currentStreamedMessage.value) {
         this.messages.value.push({ 
           role: 'assistant', 
-          content: this.currentStreamedMessage.value 
+          content: this.currentStreamedMessage.value,
+          toolCalls: this.completedToolCalls.value.length > 0 ? [...this.completedToolCalls.value] : undefined
         });
         this.currentStreamedMessage.value = '';
       }
       
       // Add any other messages that might have been returned
-      if (messages && messages.length > 0) {
+      if (data.messages && data.messages.length > 0) {
         // Filter out messages that might duplicate what we've already added
-        const newMessages = messages.filter(msg => 
+        const newMessages = data.messages.filter((msg: { role: string; content: string }) => 
           msg.role !== 'assistant' || 
           !this.messages.value.some(m => 
             m.role === 'assistant' && 
