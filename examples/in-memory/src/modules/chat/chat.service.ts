@@ -24,8 +24,7 @@ export class ChatService extends EventEmitter {
     this.on('toolCalls', this.handleToolCalls.bind(this));
     this.on('assistantResponse', this.handleAssistantResponse.bind(this));
   }
-  
-  private async handleToolCalls(toolCalls: any[]) {
+    private async handleToolCalls(toolCalls: any[]) {
     this.logger.debug(`Processing ${toolCalls.length} tool calls`);
     
     // Create promises for each tool call
@@ -48,8 +47,11 @@ export class ChatService extends EventEmitter {
     
     this.logger.debug(`Tool call results: ${JSON.stringify(results)}`);
 
-    // Add tool response messages
+    // Add tool response messages and emit completion events
     for (const { id, result } of results) {
+      // Emit that this tool call has completed
+      this.emit('toolCallComplete', { id, result });
+      
       this.#currentMessages.push({
         role: 'tool',
         tool_call_id: id,
@@ -80,8 +82,7 @@ export class ChatService extends EventEmitter {
       this.#resolveConversation = null;
     }
   }
-  
-  private async processResponseStream(stream: any) {
+    private async processResponseStream(stream: any) {
     // Initialize variables to track the streamed response
     let assistantMessage = '';
     let toolCalls: any[] = [];
@@ -94,6 +95,9 @@ export class ChatService extends EventEmitter {
       if (deltaContent) {
         assistantMessage += deltaContent;
         this.logger.debug(`Received content chunk: ${deltaContent}`);
+        
+        // Emit the new content chunk to clients
+        this.emit('streamChunk', deltaContent);
       }
       
       // Check for tool calls in the delta
@@ -117,6 +121,9 @@ export class ChatService extends EventEmitter {
               },
             };
             toolCalls.push(currentToolCall);
+            
+            // Emit that we're starting a tool call
+            this.emit('toolCallStart', { id: toolCallId });
           }
         }
         
@@ -177,7 +184,6 @@ export class ChatService extends EventEmitter {
 
     return this.#availableTools;
   }
-
   async sendMessage(
     chatKey: string,
     message: string,
@@ -185,9 +191,15 @@ export class ChatService extends EventEmitter {
     const messages: ChatCompletionMessageParam[] = [];
 
     messages.push({ role: 'user', content: message });
+    
+    // Emit that we're starting the stream
+    this.emit('streamStart');
 
     const newMessages = await this.converse(messages);
     const newMessagesOnly = newMessages.slice(messages.length - 1);
+
+    // Emit that the stream is complete with final messages
+    this.emit('streamComplete', []);
 
     return newMessagesOnly;
   }
