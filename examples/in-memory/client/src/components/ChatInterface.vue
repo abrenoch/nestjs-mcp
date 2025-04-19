@@ -6,8 +6,7 @@
         {{ isConnected ? 'Connected' : 'Disconnected' }}
       </div>
     </div>
-    
-    <div class="messages-container" ref="messagesContainer">
+      <div class="messages-container" ref="messagesContainer">
       <div v-for="(message, index) in messages" 
            :key="index" 
            class="message" 
@@ -15,7 +14,34 @@
         <div class="message-role">{{ message.role === 'user' ? 'You' : 'AI' }}</div>
         <div class="message-content">{{ message.content }}</div>
       </div>
-      <div v-if="isLoading" class="message ai loading">
+      
+      <!-- Streaming message display -->
+      <div v-if="isStreaming" class="message ai streaming">
+        <div class="message-role">AI</div>
+        <div class="message-content">{{ currentStreamedMessage }}</div>
+      </div>
+      
+      <!-- Tool call in progress -->
+      <div v-if="toolCallInProgress" class="message ai tool-call">
+        <div class="message-role">AI (Tool Call)</div>
+        <div class="message-content">
+          <div class="tool-call-info">
+            <div v-if="currentToolCall && currentToolCall.function">
+              Running: {{ currentToolCall.function.name }}
+            </div>
+            <div class="tool-call-loading">
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Loading indicator (only show if not streaming) -->
+      <div v-if="isLoading && !isStreaming && !toolCallInProgress" class="message ai loading">
         <div class="message-role">AI</div>
         <div class="message-content">
           <div class="typing-indicator">
@@ -55,6 +81,10 @@ const messagesContainer = ref<HTMLElement | null>(null);
 // Using the socket service
 const isConnected = socketService.isConnected;
 const messages = socketService.messages;
+const isStreaming = socketService.isStreaming;
+const currentStreamedMessage = socketService.currentStreamedMessage;
+const toolCallInProgress = socketService.toolCallInProgress;
+const currentToolCall = socketService.currentToolCall;
 
 // Connect to socket on component mount
 onMounted(() => {
