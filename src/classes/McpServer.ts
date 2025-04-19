@@ -7,12 +7,14 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inmemory.js';
 import { McpServer as OgServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { type ListToolsResult } from '@modelcontextprotocol/sdk/types';
 import {
+  Injectable,
   Logger,
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 
+@Injectable()
 export class McpServer
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
