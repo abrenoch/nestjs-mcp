@@ -34,4 +34,21 @@ export class OpenAiService {
       model: modelId,
     });
   }
+
+  async streamCompletion(
+    messages: ChatCompletionMessageParam[] = [],
+    modelId: string = this.DEFAULT_COMPLETION_MODEL,
+    responseFormat: 'text' | 'json_schema' | 'json_object' = 'text',
+    tools: ChatCompletionTool[] = [],
+  ) {
+    return this.client.chat.completions.create({
+      response_format: {
+        type: responseFormat,
+      } as ChatCompletionCreateParamsBase['response_format'],
+      messages,
+      tools,
+      model: modelId,
+      stream: true,
+    });
+  }
 }
