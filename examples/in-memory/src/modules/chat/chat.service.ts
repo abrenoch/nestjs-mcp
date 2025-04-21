@@ -94,9 +94,8 @@ export class ChatService extends EventEmitter {
       const deltaContent = chunk.choices[0]?.delta?.content;
       if (deltaContent) {
         assistantMessage += deltaContent;
-        this.logger.debug(`Received content chunk: ${deltaContent}`);
+        // this.logger.debug(`Received content chunk: ${deltaContent}`);
         
-        // Emit the new content chunk to clients
         this.emit('streamChunk', deltaContent);
       }
       
